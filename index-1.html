@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ 肌膚類型檢測</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+  :root {
+    --coral: #FF6B6B;
+    --mint: #4ECDC4;
+    --yellow: #FFE66D;
+    --white: #FFFFFF;
+    --light: #F7F7F7;
+    --dark: #2D2D2D;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    background: var(--light);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    max-width: 480px;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--coral) 0%, #ff8e53 100%);
+    padding: 32px 28px 28px;
+    text-align: center;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 28px;
+    background: var(--white);
+    border-radius: 28px 28px 0 0;
+  }
+  .header-emoji { font-size: 48px; display: block; margin-bottom: 8px; }
+  .header h1 {
+    color: var(--white);
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+  .header p {
+    color: rgba(255,255,255,0.88);
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    padding: 20px 28px 8px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 6px;
+    background: #eee;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--coral), var(--mint));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* Question */
+  .question-wrap {
+    padding: 20px 28px 28px;
+  }
+  .q-number {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--coral);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .q-text {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .opt {
+    border: 2px solid #eee;
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.18s ease;
+    background: var(--white);
+  }
+  .opt:hover {
+    border-color: var(--coral);
+    background: #fff5f5;
+    transform: translateX(3px);
+  }
+  .opt.selected {
+    border-color: var(--coral);
+    background: linear-gradient(135deg, #fff0f0, #fff8f5);
+    box-shadow: 0 2px 12px rgba(255,107,107,0.18);
+  }
+  .opt-icon {
+    font-size: 22px;
+    width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .opt-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--dark);
+    line-height: 1.4;
+  }
+
+  /* Nav buttons */
+  .nav {
+    display: flex;
+    gap: 10px;
+    padding: 0 28px 28px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 99px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-back {
+    background: #f0f0f0;
+    color: #888;
+  }
+  .btn-back:hover { background: #e5e5e5; }
+  .btn-next {
+    background: linear-gradient(135deg, var(--coral), #ff8e53);
+    color: white;
+    box-shadow: 0 4px 14px rgba(255,107,107,0.35);
+  }
+  .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
+  .btn-next:disabled { opacity: 0.4; transform: none; cursor: default; box-shadow: none; }
+
+  /* Result */
+  .result-wrap {
+    padding: 8px 28px 32px;
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .result-badge {
+    border-radius: 18px;
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .result-badge .big-emoji { font-size: 56px; display: block; margin-bottom: 10px; }
+  .result-badge h2 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+  .result-badge .subtitle { font-size: 13px; opacity: 0.8; }
+
+  .traits { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .trait-tag {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .tips-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 10px;
+  }
+  .tip-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--light);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+  }
+  .tip-item span:first-child { flex-shrink: 0; }
+
+  .btn-retake {
+    width: 100%;
+    padding: 14px;
+    border-radius: 99px;
+    border: 2px solid var(--coral);
+    background: white;
+    color: var(--coral);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.18s;
+  }
+  .btn-retake:hover { background: var(--coral); color: white; }
+
+  .fade-enter { animation: fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="card" id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-emoji">🔬</span>
+    <h1>肌膚類型小測驗</h1>
+    <p>只需 1 分鐘，找出最適合你的保養方式</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressText">第 1 題，共 8 題</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Question -->
+  <div class="question-wrap" id="questionWrap">
+    <div class="q-number" id="qNumber">Q1</div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="optionsWrap"></div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav" id="navWrap">
+    <button class="btn btn-back" id="btnBack" onclick="goBack()">← 上一題</button>
+    <button class="btn btn-next" id="btnNext" onclick="goNext()" disabled>下一題 →</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-wrap" id="resultWrap"></div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "早上起床後，臉上摸起來的感覺是？",
+    options: [
+      { icon: "🧴", text: "緊繃、有點乾，尤其臉頰" },
+      { icon: "✨", text: "全臉都油亮亮的" },
+      { icon: "🎭", text: "T 字部位出油，臉頰偏乾" },
+      { icon: "🌸", text: "感覺還好，但有時有點敏感刺痛" },
+    ]
+  },
+  {
+    text: "洗臉後不擦任何保養品，大約多久會開始感覺不舒服？",
+    options: [
+      { icon: "⚡", text: "馬上！乾緊得很難受" },
+      { icon: "⏰", text: "大約 1 小時後才有感覺" },
+      { icon: "🕐", text: "T 字快，臉頰則需比較久" },
+      { icon: "😣", text: "有時不是乾，而是刺痛或癢" },
+    ]
+  },
+  {
+    text: "到了下午，臉部出油的狀況？",
+    options: [
+      { icon: "🏜️", text: "幾乎不出油，甚至還有脫皮" },
+      { icon: "💦", text: "全臉都很油，需要補粉或吸油紙" },
+      { icon: "🗺️", text: "只有 T 字出油，臉頰還好" },
+      { icon: "🤔", text: "不一定，換季或壓力大時特別明顯" },
+    ]
+  },
+  {
+    text: "你的毛孔狀況？",
+    options: [
+      { icon: "🔍", text: "幾乎看不見，但皮膚感覺薄" },
+      { icon: "🌋", text: "全臉毛孔都比較明顯" },
+      { icon: "〰️", text: "T 字明顯，兩頰細緻" },
+      { icon: "🫧", text: "有時會突然變紅或感覺刺激" },
+    ]
+  },
+  {
+    text: "使用新保養品時，你的皮膚反應通常是？",
+    options: [
+      { icon: "😌", text: "沒什麼特別反應，但很需要滋潤" },
+      { icon: "😅", text: "容易冒痘或悶住" },
+      { icon: "🎲", text: "看部位，T 字容易出油但其他ok" },
+      { icon: "⚠️", text: "很容易泛紅、過敏或長疹子" },
+    ]
+  },
+  {
+    text: "你的臉部在照鏡子時，整體光澤感？",
+    options: [
+      { icon: "🪞", text: "暗沉或偏乾，缺乏光澤" },
+      { icon: "💡", text: "發亮甚至油光反射" },
+      { icon: "🌗", text: "T 字亮，臉頰霧面" },
+      { icon: "🌹", text: "有時泛紅，膚色不太均勻" },
+    ]
+  },
+  {
+    text: "氣候變化（乾燥、換季）時，皮膚的反應？",
+    options: [
+      { icon: "😰", text: "馬上變得非常乾，甚至脫皮" },
+      { icon: "😶", text: "幾乎沒影響，照樣出油" },
+      { icon: "😵", text: "T 字變化不大，臉頰開始乾" },
+      { icon: "🚨", text: "很敏感，容易泛紅、搔癢、不穩定" },
+    ]
+  },
+  {
+    text: "你對保養的最大困擾是？",
+    options: [
+      { icon: "💧", text: "一直補水還是乾，妝容容易卡粉" },
+      { icon: "🧻", text: "隨時需要吸油，底妝容易脫落" },
+      { icon: "🎯", text: "難找同時控油又不乾燥的產品" },
+      { icon: "🛡️", text: "找不到不刺激又有效的保養品" },
+    ]
+  },
+];
+
+// Scoring: each option index maps to skin type
+// option 0 = dry, 1 = oily, 2 = combo, 3 = sensitive
+const typeMap = ['dry','oily','combo','sensitive'];
+
+const results = {
+  dry: {
+    label: '乾性肌膚',
+    emoji: '🌵',
+    color: '#FFD4A3',
+    textColor: '#7A4300',
+    tagBg: '#FFE8CC',
+    tagColor: '#7A4300',
+    traits: ['容易緊繃', '毛孔細緻', '易脫皮', '暗沉'],
+    tips: [
+      { icon: '💧', text: '早晚使用高保濕精華或面霜，鎖住水分是關鍵' },
+      { icon: '🛁', text: '避免過度清潔，建議選用溫和無皂鹼潔顏品' },
+      { icon: '🥑', text: '補充天然油脂成分（角鯊烷、荷荷芭油）效果佳' },
+      { icon: '😴', text: '睡眠充足、多喝水，從內而外補水最根本' },
+    ]
+  },
+  oily: {
+    label: '油性肌膚',
+    emoji: '✨',
+    color: '#C8F5E8',
+    textColor: '#1A6B50',
+    tagBg: '#AEEEDD',
+    tagColor: '#1A6B50',
+    traits: ['全臉易出油', '毛孔較粗', '容易悶痘', '持妝難'],
+    tips: [
+      { icon: '🫧', text: '選用控油不乾燥的水感保濕，避免厚重乳霜' },
+      { icon: '🧼', text: '早晚溫和潔顏，不要過度清潔（反而會刺激出更多油）' },
+      { icon: '🧴', text: '使用含菸鹼醯胺、水楊酸成分，有效調節皮脂' },
+      { icon: '🍃', text: '飲食少精緻糖，油膩食物會讓出油更旺盛' },
+    ]
+  },
+  combo: {
+    label: '混合性肌膚',
+    emoji: '🎭',
+    color: '#D4EEFF',
+    textColor: '#1A4A6B',
+    tagBg: '#B8DDFF',
+    tagColor: '#1A4A6B',
+    traits: ['T 字出油', '臉頰偏乾', '保養需分區', '換季不穩'],
+    tips: [
+      { icon: '🗺️', text: '分區保養：T 字選清爽控油，臉頰使用滋潤乳霜' },
+      { icon: '⚖️', text: '全臉打底用清爽化妝水，再依部位疊加' },
+      { icon: '🌿', text: '避免全臉使用過於滋潤的產品，以免加重 T 字出油' },
+      { icon: '📅', text: '換季時特別注意臉頰補水，T 字則加強控油' },
+    ]
+  },
+  sensitive: {
+    label: '敏感性肌膚',
+    emoji: '🌸',
+    color: '#FFE0E8',
+    textColor: '#8B1A3A',
+    tagBg: '#FFCCD8',
+    tagColor: '#8B1A3A',
+    traits: ['容易泛紅', '易過敏', '屏障較弱', '需溫和成分'],
+    tips: [
+      { icon: '🛡️', text: '優先選擇無香精、無酒精的溫和保養品' },
+      { icon: '🔬', text: '新產品先在耳後或手腕內側做 24 小時貼膚測試' },
+      { icon: '🌱', text: '加強修護皮膚屏障，含神經醯胺、積雪草成分效果好' },
+      { icon: '☀️', text: '每天塗抹防曬（選物理性）是敏感肌最重要的一步' },
+    ]
+  }
+};
+
+let current = 0;
+let answers = [];
+
+function render() {
+  const q = questions[current];
+  document.getElementById('qNumber').textContent = `Q${current + 1}`;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('progressText').textContent = `第 ${current + 1} 題，共 ${questions.length} 題`;
+  const pct = Math.round((current / questions.length) * 100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'opt' + (answers[current] === i ? ' selected' : '');
+    div.innerHTML = `<span class="opt-icon">${opt.icon}</span><span class="opt-text">${opt.text}</span>`;
+    div.onclick = () => selectOpt(i);
+    wrap.appendChild(div);
+  });
+
+  document.getElementById('btnBack').style.visibility = current === 0 ? 'hidden' : 'visible';
+  document.getElementById('btnNext').disabled = answers[current] === undefined;
+  document.getElementById('btnNext').textContent = current === questions.length - 1 ? '看結果 ✨' : '下一題 →';
+  document.getElementById('questionWrap').classList.add('fade-enter');
+  setTimeout(() => document.getElementById('questionWrap').classList.remove('fade-enter'), 300);
+}
+
+function selectOpt(i) {
+  answers[current] = i;
+  document.querySelectorAll('.opt').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+  document.getElementById('btnNext').disabled = false;
+}
+
+function goNext() {
+  if (answers[current] === undefined) return;
+  if (current < questions.length - 1) {
+    current++;
+    render();
+  } else {
+    showResult();
+  }
+}
+
+function goBack() {
+  if (current > 0) { current--; render(); }
+}
+
+function showResult() {
+  // Tally scores
+  const scores = { dry: 0, oily: 0, combo: 0, sensitive: 0 };
+  answers.forEach(a => { scores[typeMap[a]]++; });
+  const winner = Object.entries(scores).sort((a,b) => b[1]-a[1])[0][0];
+  const r = results[winner];
+
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('questionWrap').style.display = 'none';
+  document.getElementById('navWrap').style.display = 'none';
+
+  const rw = document.getElementById('resultWrap');
+  rw.style.display = 'block';
+  rw.innerHTML = `
+    <div class="result-badge" style="background:${r.color}">
+      <span class="big-emoji">${r.emoji}</span>
+      <h2 style="color:${r.textColor}">你是「${r.label}」</h2>
+      <div class="subtitle" style="color:${r.textColor}">以下是專屬保養建議 👇</div>
+    </div>
+    <div class="traits">
+      ${r.traits.map(t => `<span class="trait-tag" style="background:${r.tagBg};color:${r.tagColor}">${t}</span>`).join('')}
+    </div>
+    <div class="tips-title">💡 保養小建議</div>
+    ${r.tips.map(tip => `
+      <div class="tip-item">
+        <span>${tip.icon}</span>
+        <span>${tip.text}</span>
+      </div>
+    `).join('')}
+    <button class="btn-retake" onclick="retake()">🔄 重新測驗</button>
+  `;
+}
+
+function retake() {
+  current = 0;
+  answers = [];
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('questionWrap').style.display = 'block';
+  document.getElementById('navWrap').style.display = 'flex';
+  document.getElementById('resultWrap').style.display = 'none';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
